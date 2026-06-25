@@ -1,3 +1,5 @@
+// Full CRUD implementation for parties.
+
 /**
  * @typedef Party
  * @property {number} id
@@ -68,7 +70,7 @@ async function getParty(id) {
  */
 async function addParty(party) {
   try {
-    const res = await fetch(API + EVENT_RESOURCE, {
+    await fetch(API + EVENT_RESOURCE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(party),
@@ -85,7 +87,7 @@ async function addParty(party) {
  */
 async function deleteParty(id) {
   try {
-    const res = await fetch(API + EVENT_RESOURCE + "/" + id, {
+    await fetch(API + EVENT_RESOURCE + "/" + id, {
       method: "DELETE",
     });
     getParties();
@@ -101,6 +103,12 @@ async function deleteParty(id) {
  */
 async function editParty(id, editedParty) {
   try {
+    await fetch(API + EVENT_RESOURCE + "/" + id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editedParty),
+    });
+    getParty(id);
     getParties();
   } catch (error) {
     console.log(error);
@@ -133,7 +141,9 @@ async function getGuests() {
 
 // === Components ===
 
-/** Party name that shows more details about the party when clicked */
+/** Party name that shows more details about the party when clicked
+ * @returns {HTMLLIElement}
+ */
 function PartyListItem(party) {
   const $li = document.createElement("li");
 
@@ -148,7 +158,9 @@ function PartyListItem(party) {
   return $li;
 }
 
-/** A list of names of all parties */
+/** A list of names of all parties
+ * @returns {HTMLUListElement}
+ */
 function PartyList() {
   const $ul = document.createElement("ul");
   $ul.classList.add("parties");
@@ -159,7 +171,9 @@ function PartyList() {
   return $ul;
 }
 
-/** Detailed information about the selected party */
+/** Detailed information about the selected party
+ * @returns {HTMLParagraphElement | HTMLElement}
+ */
 function SelectedParty() {
   if (!selectedParty) {
     const $p = document.createElement("p");
@@ -173,7 +187,7 @@ function SelectedParty() {
       <button>Delete party </button>
     </h3>
     <time datetime="${selectedParty.date}">
-      ${selectedParty.date.slice(0, 10)}
+      ${selectedParty.date.split("T")[0]}
     </time>
     <address>${selectedParty.location}</address>
     <p>${selectedParty.description}</p>
@@ -190,7 +204,9 @@ function SelectedParty() {
   return $party;
 }
 
-/** List of guests attending the selected party */
+/** List of guests attending the selected party
+ * @returns {HTMLUListElement}
+ */
 function GuestList() {
   const $ul = document.createElement("ul");
   const guestsAtParty = guests.filter((guest) =>
@@ -236,17 +252,21 @@ function createGenericForm(submitTitle, ...inputs) {
 }
 
 /**
- * Helper to create and return a form with all required inputs for a party object
+ * Helper to create and return a form with all required inputs for a party object. Optional default values
  * @param {string} submitTitle
+ * @param {string} nameValue
+ * @param {string} descriptionValue
+ * @param {string} dateValue
+ * @param {string} locationValue
  * @returns {HTMLFormElement}
  */
-function createPartyForm(submitTitle) {
+function createPartyForm(submitTitle, nameValue = "", descriptionValue = "", dateValue = "", locationValue = "") {
   return createGenericForm(
     submitTitle,
-    { name: "name", required: true },
-    { name: "description", required: true },
-    { name: "date", type: "date", required: true },
-    { name: "location", required: true },
+    { name: "name", required: true, value: nameValue },
+    { name: "description", required: true, value: descriptionValue },
+    { name: "date", type: "date", required: true, value: dateValue },
+    { name: "location", required: true, value: locationValue },
   );
 }
 
@@ -284,13 +304,27 @@ function addPartyForm() {
   return $form;
 }
 
+/**
+ * Create and return a form for updating the selected party
+ * @returns {HTMLFormElement}
+ */
 function editPartyForm() {
-  const $form = createPartyForm("Save changes");
+  const $form = createPartyForm(
+    "Save changes",
+    selectedParty.name,
+    selectedParty.description,
+    selectedParty.date.split("T")[0],
+    selectedParty.location,
+  );
   $form.addEventListener("submit", (ev) => {
     ev.preventDefault();
+    const party = {};
     const partyFormData = new FormData($form);
     partyFormData.set("date", new Date(partyFormData.get("date")).toISOString());
+    for (const key of partyFormData.keys()) party[key] = partyFormData.get(key);
+    editParty(selectedParty.id, party);
   });
+
   return $form;
 }
 
