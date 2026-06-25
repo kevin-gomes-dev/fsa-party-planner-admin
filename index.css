@@ -53,3 +53,7 @@ form {
 label {
   display: grid;
 }
+
+#addPartyDiv {
+  width: 40vw;
+}
