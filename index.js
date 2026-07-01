@@ -90,6 +90,7 @@ async function deleteParty(id) {
     await fetch(API + EVENT_RESOURCE + "/" + id, {
       method: "DELETE",
     });
+    selectedParty = null;
     getParties();
   } catch (error) {
     console.log(error);
@@ -197,7 +198,6 @@ function SelectedParty() {
   $party.querySelector("GuestList").replaceWith(GuestList());
   $party.querySelector("button").addEventListener("click", () => {
     deleteParty(selectedParty.id);
-    selectedParty = null;
   });
   $party.querySelector("form").replaceWith(editPartyForm());
 
